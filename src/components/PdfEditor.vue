@@ -1,15 +1,19 @@
 <template>
     <div class="mb-4 flex flex-col relative">
-        <div class="absolute right-0 p-4 mb-4">
+        <div class="absolute right-0 p-4 mb-4 flex flex-col">
             <input type="file"
                 id="image"
                 name="image"
                 class="hidden"
                 @change="uploadImage" />
             <label for="image"
-                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                class="text-black border border-black cursor-pointer font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2">
                 Add Image
             </label>
+            <button class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                @click="download">
+                Save
+            </button>
         </div>
         <div class="w-full overflow-auto">
             <div v-for="(page, pageIndex) in pages" 
@@ -42,11 +46,10 @@
             </div>
         </div>
     </div>
-    <button class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-        @click="sign">Save</button>
 </template>
 <script>
 
+import { reactive, toRefs } from "vue"
 import {
     readAsImage,
     readAsPDF,
@@ -56,102 +59,89 @@ import prepareAssets, { fetchFont } from "./utils/prepareAssets"
 import PdfPage from "./PdfPage.vue"
 import Object from "./Object.vue"
 import { save } from "./utils/PDF"
-import { dataType64toFile } from './utils/image'
+// import { dataType64toFile } from './utils/image'
 
 export default {
 
-    components: { Object, PdfPage },
+    components: { PdfPage, Object },
 
     props: {
-
         pdf: {
             required: true,
             type: String
         }
     },
 
-    data: () => ({
-        pagesScale: [],
-        allObjects: [],
-        pages: [],
-        selectedPageIndex: 0,
-        pdfFile: null,
-        opacity: 1,
-    }),
+    setup(props) {
 
-    async mounted() {
-        try {
-            const res = await fetch(this.pdf)
-            const pdfBlob = await res.blob()
-            await this.addPDF(pdfBlob)
+        const data = reactive({
+            pagesScale: [],
+            allObjects: [],
+            pages: [],
+            selectedPageIndex: 0,
+            pdfFile: null,
+            opacity: 1,
+        })
 
-            this.selectedPageIndex = 0
+        mounted(props)
 
-            setTimeout(() => {
-                fetchFont("Times-Roman")
-                prepareAssets()
-            }, 5000)
-
-        } catch (e) {
-            console.log('Error:', e)
-        }
-    },
-
-    methods: {
-
-        async sign() {
+        async function mounted({ pdf }) {
             try {
-                await save(
-                    this.pdfFile, 
-                    this.allObjects, 
-                    'PDF Copy', 
-                    this.pagesScale
-                )
+                const res = await fetch(pdf)
+                const pdfBlob = await res.blob()
+                await addPDF(pdfBlob)
+
+                data.selectedPageIndex = 0
+
+                setTimeout(() => {
+                    fetchFont("Times-Roman")
+                    prepareAssets()
+                }, 5000)
             } catch (e) {
-                console.log('Error on saving, please try again.', e)
+                console.log('Error:', e)
             }
-        },
+        }
 
-        onMeasure(scale, pageIndex) {
-            this.pagesScale[pageIndex] = scale
-        },
+        async function addPDF(file) {
+            try {
+                const pdf = await readAsPDF(file)
+                data.pdfFile = file
+                const numPages = pdf.numPages
 
-        selectPage(index) {
-            this.selectedPageIndex = index
-        },
+                data.pages = Array(numPages)
+                    .fill()
+                    .map((_, i) => pdf.getPage(i + 1))
 
-        updateObject(objectId, payload) {
-            this.allObjects = this.allObjects.map((object, pIndex) => {
+                data.allObjects = []
+                data.pagesScale = Array(numPages).fill(1)
+
+            } catch (e) {
+                console.log('Failed to add pdf. Please try again.', e)
+            }
+        }
+
+        function onMeasure(scale, pageIndex) {
+            data.pagesScale[pageIndex] = scale
+        }
+
+        function selectPage(index) {
+            data.selectedPageIndex = index
+        }
+
+        function updateObject(objectId, payload) {
+            data.allObjects = this.allObjects.map((object, pIndex) => {
                 if (object.page == this.selectedPageIndex && object.id === objectId)
                     return { ...object, ...payload }
                 else
                     return object
             })
-        },
+        }
 
-        deleteObject(objectId) {
-            this.allObjects = this.allObjects.filter((object, pIndex) => object.page == this.selectedPageIndex && object.id !== objectId)
-        },
+        function deleteObject(objectId) {
+            data.allObjects = data.allObjects.filter((object, pIndex) => object.page == this.selectedPageIndex && object.id !== objectId)
+        }
 
-        async addPDF(file) {
-            try {
-                const pdf = await readAsPDF(file)
-                this.pdfFile = file
-                const numPages = pdf.numPages
-
-                this.pages = Array(numPages)
-                    .fill()
-                    .map((_, i) => pdf.getPage(i + 1))
-
-                this.allObjects = []
-                this.pagesScale = Array(numPages).fill(1)
-
-            } catch (e) {
-                console.log('Failed to add pdf. Please try again.', e)
-            }
-        },
-
-        async addImage(file) {
+        async function addImage(file) {
             try {
                 // get dataURL to prevent canvas from tainted
                 const url = await readAsDataURL(file)
@@ -168,23 +158,38 @@ export default {
                     y: 0,
                     payload: img,
                     file: file,
-                    page: this.selectedPageIndex
+                    page: data.selectedPageIndex
                 }
 
-                this.allObjects = [object]
+                data.allObjects = [object]
             } catch (e) {
                 console.log('Failed to add image.', e)
             }
-        },
+        }
 
-        uploadImage(e) {
+        async function download() {
+            try {
+                await save(
+                    data.pdfFile, 
+                    data.allObjects, 
+                    'PDF Copy', 
+                    data.pagesScale
+                )
+            } catch (e) {
+                console.log('Error on saving, please try again.', e)
+            }
+        }
+
+        function uploadImage(e) {
             const file = e.target.files[0];
-            if (file && this.selectedPageIndex >= 0) {
-                this.addImage(file);
+            if (file && data.selectedPageIndex >= 0) {
+                addImage(file);
             }
             e.target.value = null;
         }
-    },
+
+        return { ...toRefs(data), download, onMeasure, selectPage, updateObject, deleteObject, uploadImage, addImage }
+    }
 }
 </script>
 <style >
