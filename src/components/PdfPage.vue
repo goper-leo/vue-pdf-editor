@@ -9,6 +9,8 @@
     </div>
 </template>
 <script>
+import { reactive, toRefs, onMounted, onBeforeUnmount, ref } from "vue"
+
 export default {
 
     props: {
@@ -17,34 +19,42 @@ export default {
         }
     },
 
-    data: () => ({
-        width: 0,
-        height: 0,
-    }),
+    emits: [ 'measure' ],
 
-    methods: {
-        measure() {
-            this.$emit('measure', this.$refs.pdfCanvas.clientWidth / this.width)
+    setup(props, { emit }) {
+        const pdfCanvas = ref()
+
+        const data = reactive({
+            width: 0,
+            height: 0,
+        })
+
+        mounted(props)
+
+        async function mounted(props) {
+            const _page = await props.page
+            const context = pdfCanvas.value.getContext("2d")
+            const viewport = _page.getViewport({ scale: 1, rotation: 0 })
+            data.width = viewport.width
+            data.height = viewport.height
+            await _page.render({
+                canvasContext: context,
+                viewport
+            }).promise
+            measure()
+            window.addEventListener("resize", measure)
+        }
+
+        function measure() {
+            emit('measure', pdfCanvas.value.clientWidth / data.width)
             return 
-        },
-    },
+        }
 
-    async mounted() {
-        const _page = await this.page
-        const context = this.$refs.pdfCanvas.getContext("2d")
-        const viewport = _page.getViewport({ scale: 1, rotation: 0 })
-        this.width = viewport.width
-        this.height = viewport.height
-        await _page.render({
-            canvasContext: context,
-            viewport
-        }).promise
-        this.measure()
-        window.addEventListener("resize", this.measure)
-    },
+        onBeforeUnmount(() => {
+            window.removeEventListener("resize", measure)
+        })
 
-    beforeDestroy() {
-        window.removeEventListener("resize", this.measure)
+        return { ...toRefs(data), measure, pdfCanvas }
     }
 }
 </script>
