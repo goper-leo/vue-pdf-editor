@@ -28,7 +28,7 @@
                         :style="{transform: `scale(${pagesScale[pageIndex]})`, 
                             touchAction: 'none'
                         }">
-                        <Object v-for="(object, objectIndex) in allObjects"
+                        <object-container v-for="(object, objectIndex) in allObjects"
                             :key="objectIndex"
                             @update="(payload) => updateObject(object.id, payload)"
                             @delete="() => deleteObject(object.id)"
@@ -57,13 +57,13 @@ import {
 } from "./utils/asyncReader"
 import prepareAssets, { fetchFont } from "./utils/prepareAssets"
 import PdfPage from "./PdfPage.vue"
-import Object from "./Object.vue"
+import ObjectContainer from "./ObjectContainer.vue"
 import { save } from "./utils/PDF"
 // import { dataType64toFile } from './utils/image'
 
 export default {
 
-    components: { PdfPage, Object },
+    components: { PdfPage, ObjectContainer },
 
     props: {
         pdf: {
@@ -129,7 +129,7 @@ export default {
         }
 
         function updateObject(objectId, payload) {
-            data.allObjects = this.allObjects.map((object, pIndex) => {
+            data.allObjects = this.allObjects.map((object) => {
                 if (object.page == this.selectedPageIndex && object.id === objectId)
                     return { ...object, ...payload }
                 else
@@ -138,7 +138,7 @@ export default {
         }
 
         function deleteObject(objectId) {
-            data.allObjects = data.allObjects.filter((object, pIndex) => object.page == this.selectedPageIndex && object.id !== objectId)
+            data.allObjects = data.allObjects.filter((object) => object.page == this.selectedPageIndex && object.id !== objectId)
         }
 
         async function addImage(file) {
@@ -181,11 +181,11 @@ export default {
         }
 
         function uploadImage(e) {
-            const file = e.target.files[0];
+            const file = e.target.files[0]
             if (file && data.selectedPageIndex >= 0) {
-                addImage(file);
+                addImage(file)
             }
-            e.target.value = null;
+            e.target.value = null
         }
 
         return { ...toRefs(data), download, onMeasure, selectPage, updateObject, deleteObject, uploadImage, addImage }

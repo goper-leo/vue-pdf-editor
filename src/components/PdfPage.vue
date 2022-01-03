@@ -9,7 +9,7 @@
     </div>
 </template>
 <script>
-import { reactive, toRefs, onMounted, onBeforeUnmount, ref } from "vue"
+import { reactive, toRefs, onBeforeUnmount, ref, onMounted } from "vue"
 
 export default {
 
@@ -29,9 +29,11 @@ export default {
             height: 0,
         })
 
-        mounted(props)
+        onMounted(() => {
+            setupPage(props)
+        })
 
-        async function mounted(props) {
+        async function setupPage(props) {
             const _page = await props.page
             const context = pdfCanvas.value.getContext("2d")
             const viewport = _page.getViewport({ scale: 1, rotation: 0 })

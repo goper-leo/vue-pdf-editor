@@ -26,113 +26,123 @@
     </div>
 </template>
 <script>
+import { reactive, toRefs, computed, ref, onMounted, onUnmounted } from "vue"
+
 export default {
     
     props: {
         operation: { required: true }
     },
 
-    data: () => ({
-        x: 0,
-        y: 0,
-    }),
+    emits: [ 'panstart', 'panmove', 'panend' ],
 
-    methods: {
+    setup(props, { emit }) {
+        const signatureContainer = ref()
+        const data = reactive({
+            x: 0,
+            y: 0,
+        })
 
-        setDirection() {
-            
-        },
+        const moveOperation = computed(() => props.operation === 'move')
 
-        handleMousedown(event) {
-            this.x = event.clientX
-            this.y = event.clientY
+        onMounted(() => {
+            setupEvent()
+        })
+
+        onUnmounted(() => {
+            signatureContainer.value.removeEventListener('mousedown', handleMousedown)
+            signatureContainer.value.removeEventListener('touchstart', handleTouchStart)
+        })
+
+        function setupEvent() {
+            signatureContainer.value.addEventListener('mousedown', handleMousedown)
+            signatureContainer.value.addEventListener('touchstart', handleTouchStart)
+        }
+
+        function handleMousedown(event) {
+            data.x = event.clientX
+            data.y = event.clientY
             const target = event.target
-            console.log('this.$refs', this.$refs);
-            this.$emit('panstart', { 
-                x: this.x, 
-                y: this.y, 
+            emit('panstart', { 
+                x: data.x, 
+                y: data.y, 
                 target, 
-                currentTarget: this.$refs.signatureContainer
+                currentTarget: signatureContainer.value
             })
-            this.$refs.signatureContainer.addEventListener('mousemove', this.handleMousemove)
-            this.$refs.signatureContainer.addEventListener('mouseup', this.handleMouseup)
-        },
+            signatureContainer.value.addEventListener('mousemove', handleMousemove)
+            signatureContainer.value.addEventListener('mouseup', handleMouseup)
+        }
 
-        handleMousemove(event) {
-            const dx = event.clientX - this.x
-            const dy = event.clientY - this.y
-            this.x = event.clientX
-            this.y = event.clientY
+        function handleMousemove(event) {
+            const dx = event.clientX - data.x
+            const dy = event.clientY - data.y
+            data.x = event.clientX
+            data.y = event.clientY
 
-            this.$emit('panmove', { 
-                x: this.x, 
-                y: this.y, 
+            emit('panmove', { 
+                x: data.x, 
+                y: data.y, 
                 dx, 
                 dy 
             })
-        },
+        }
 
-        handleMouseup(event) {
-            this.x = event.clientX
-            this.y = event.clientY
+        function handleMouseup(event) {
+            data.x = event.clientX
+            data.y = event.clientY
 
-            this.$emit('panend', { x: this.x, y: this.y })
+            emit('panend', { x: data.x, y: data.y })
 
-            this.$refs.signatureContainer.removeEventListener('mousemove', this.handleMousemove)
-            this.$refs.signatureContainer.removeEventListener('mouseup', this.handleMouseup)
-        },
+            signatureContainer.value.removeEventListener('mousemove', handleMousemove)
+            signatureContainer.value.removeEventListener('mouseup', handleMouseup)
+        }
 
-        handleTouchStart(event) {
+        function handleTouchStart(event) {
             if (event.touches.length > 1) return
             const touch = event.touches[0]
-            this.x = touch.clientX
-            this.y = touch.clientY
+            data.x = touch.clientX
+            data.y = touch.clientY
             const target = touch.target
 
-            this.$emit('panstart', { x: this.x, y: this.y, target })
-            this.$refs.signatureContainer.addEventListener('touchmove', this.handleTouchmove) // { passive: false }
-            this.$refs.signatureContainer.addEventListener('touchend', this.handleTouchend)
-        },
+            emit('panstart', { x: data.x, y: data.y, target })
+            signatureContainer.value.addEventListener('touchmove', handleTouchmove) // { passive: false }
+            signatureContainer.value.addEventListener('touchend', handleTouchend)
+        }
 
-        handleTouchmove(event) {
+        function handleTouchmove(event) {
             event.preventDefault()
             if (event.touches.length > 1) return
             const touch = event.touches[0]
-            const dx = touch.clientX - this.x
-            const dy = touch.clientY - this.y
-            this.x = touch.clientX
-            this.y = touch.clientY
+            const dx = touch.clientX - data.x
+            const dy = touch.clientY - data.y
+            data.x = touch.clientX
+            data.y = touch.clientY
 
-            this.$emit('panmove', { x: this.x, y: this.y, dx, dy })
-        },
+            emit('panmove', { x: data.x, y: data.y, dx, dy })
+        }
 
-        handleTouchend(event) {
+        function handleTouchend(event) {
             const touch = event.changedTouches[0]
-            this.x = touch.clientX
-            this.y = touch.clientY
+            data.x = touch.clientX
+            data.y = touch.clientY
 
-            this.$emit('panend', { x: this.x, y: this.y })
-            this.$refs.signatureContainer.removeEventListener('touchmove', this.handleTouchmove)
-            this.$refs.signatureContainer.removeEventListener('touchend', this.handleTouchend)
-        },
-    },
-
-    destroyed() {
-        if (this.$refs.signatureContainer) {
-            this.$refs.signatureContainer.removeEventListener('mousedown', this.handleMousedown)
-            this.$refs.signatureContainer.removeEventListener('touchstart', this.handleTouchStart)
+            emit('panend', { x: data.x, y: data.y })
+            signatureContainer.value.removeEventListener('touchmove', handleTouchmove)
+            signatureContainer.value.removeEventListener('touchend', handleTouchend)
         }
-    },
 
-    computed: {
-        moveOperation() {
-            return this.operation === 'move'
+        return { 
+            ...toRefs(data),
+            moveOperation,
+            signatureContainer,
+            handleMousedown,
+            handleMousemove,
+            handleMouseup,
+            handleTouchStart,
+            handleTouchmove,
+            handleTouchend,
         }
-    },
 
-    mounted() {
-        this.$refs.signatureContainer.addEventListener('mousedown', this.handleMousedown)
-        this.$refs.signatureContainer.addEventListener('touchstart', this.handleTouchStart)
     }
 }
 </script>
