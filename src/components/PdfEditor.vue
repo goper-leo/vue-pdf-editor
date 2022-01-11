@@ -1,52 +1,3 @@
-<template>
-    <div class="mb-4 flex flex-col relative">
-        <div class="absolute right-0 p-4 mb-4 flex flex-col">
-            <input type="file"
-                id="image"
-                name="image"
-                class="hidden"
-                @change="uploadImage" />
-            <label for="image"
-                class="text-black border border-black cursor-pointer font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2">
-                Add Image
-            </label>
-            <button class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                @click="download">
-                Save
-            </button>
-        </div>
-        <div class="w-full overflow-auto">
-            <div v-for="(page, pageIndex) in pages" 
-                :key="pageIndex"
-                class="p-5 w-full flex flex-col items-center overflow-hidden"
-                @mousedown="() => selectPage(pageIndex)"
-                @touchstart="() => selectPage(pageIndex)" >
-                <div :class="['relative shadow-lg mb-4', { 'selected-pdf': pageIndex == selectedPageIndex}]">
-                    <pdf-page :page="pages[pageIndex]"
-                        @measure="(payload) => onMeasure(payload, pageIndex)" />
-                    <div class="absolute top-0 left-0 transform origin-top-left"
-                        :style="{transform: `scale(${pagesScale[pageIndex]})`, 
-                            touchAction: 'none'
-                        }">
-                        <object-container v-for="(object, objectIndex) in allObjects"
-                            :key="objectIndex"
-                            @update="(payload) => updateObject(object.id, payload)"
-                            @delete="() => deleteObject(object.id)"
-                            :file="object.file"
-                            :payload="object.payload"
-                            :x="object.x"
-                            :y="object.y"
-                            :width="object.width"
-                            :height="object.height"
-                            :opacity="opacity"
-                            :pageScale="pagesScale[pageIndex]" />
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</template>
 <script>
 
 import { reactive, toRefs } from "vue"
@@ -192,7 +143,56 @@ export default {
     }
 }
 </script>
-<style >
+<template>
+    <div class="mb-4 flex flex-col relative">
+        <div class="absolute right-0 p-4 mb-4 flex flex-col">
+            <input type="file"
+                id="image"
+                name="image"
+                class="hidden"
+                @change="uploadImage" />
+            <label for="image"
+                class="text-black border border-black cursor-pointer font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2">
+                Add Image
+            </label>
+            <button class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                @click="download">
+                Save
+            </button>
+        </div>
+        <div class="w-full overflow-auto">
+            <div v-for="(page, pageIndex) in pages" 
+                :key="pageIndex"
+                class="p-5 w-full flex flex-col items-center overflow-hidden"
+                @mousedown="() => selectPage(pageIndex)"
+                @touchstart="() => selectPage(pageIndex)" >
+                <div :class="['relative shadow-lg mb-4', { 'selected-pdf': pageIndex == selectedPageIndex}]">
+                    <pdf-page :page="pages[pageIndex]"
+                        @measure="(payload) => onMeasure(payload, pageIndex)" />
+                    <div class="absolute top-0 left-0 transform origin-top-left"
+                        :style="{transform: `scale(${pagesScale[pageIndex]})`, 
+                            touchAction: 'none'
+                        }">
+                        <object-container v-for="(object, objectIndex) in allObjects"
+                            :key="objectIndex"
+                            @update="(payload) => updateObject(object.id, payload)"
+                            @delete="() => deleteObject(object.id)"
+                            :file="object.file"
+                            :payload="object.payload"
+                            :x="object.x"
+                            :y="object.y"
+                            :width="object.width"
+                            :height="object.height"
+                            :opacity="opacity"
+                            :pageScale="pagesScale[pageIndex]" />
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+<style scoped>
 
 .selected-pdf {
     box-shadow: 0 0 0 1px rgba(52, 117, 224, 0.5);

@@ -1,32 +1,5 @@
-<template>
-    <div ref="signatureContainer" 
-        @mousedown="handleMousedown"
-        @touchstart="handleTouchStart"
-        :class="['absolute w-full h-full cursor-grab operation', 
-            { 'cursor-grabbing': moveOperation }]">
-        <div data-direction="left"
-            class="resize-border h-full w-1 left-0 top-0 border-l cursor-ew-resize" />
-        <div data-direction="top"
-            class="resize-border w-full h-1 left-0 top-0 border-t cursor-ns-resize" />
-        <div data-direction="bottom"
-            class="resize-border w-full h-1 left-0 bottom-0 border-b cursor-ns-resize" />
-        <div data-direction="right"
-            class="resize-border h-full w-1 right-0 top-0 border-r cursor-ew-resize" />
-        <div data-direction="left-top"
-            class="resize-corner left-0 top-0 cursor-nwse-resize transform-translate-x-1/2 -translate-y-1/2 md:scale-25" />
-        <div data-direction="right-top"
-            class="resize-corner right-0 top-0 cursor-nesw-resize transform
-                translate-x-1/2 -translate-y-1/2 md:scale-25" />
-        <div data-direction="left-bottom"
-            class="resize-corner left-0 bottom-0 cursor-nesw-resize transform
-                -translate-x-1/2 translate-y-1/2 md:scale-25" />
-        <div data-direction="right-bottom"
-            class="resize-corner right-0 bottom-0 cursor-nwse-resize transform
-            translate-x-1/2 translate-y-1/2 md:scale-25" />
-    </div>
-</template>
 <script>
-import { reactive, toRefs, computed, ref, onMounted, onUnmounted } from "vue"
+import { reactive, toRefs, computed, ref, onMounted, onBeforeUnmount } from "vue"
 
 export default {
     
@@ -49,7 +22,7 @@ export default {
             setupEvent()
         })
 
-        onUnmounted(() => {
+        onBeforeUnmount(() => {
             signatureContainer.value.removeEventListener('mousedown', handleMousedown)
             signatureContainer.value.removeEventListener('touchstart', handleTouchStart)
         })
@@ -146,6 +119,33 @@ export default {
     }
 }
 </script>
+<template>
+    <div ref="signatureContainer" 
+        @mousedown.passive="handleMousedown"
+        @touchstart.passive="handleTouchStart"
+        :class="['absolute w-full h-full cursor-grab operation', 
+            { 'cursor-grabbing': moveOperation }]">
+        <div data-direction="left"
+            class="resize-border h-full w-1 left-0 top-0 border-l cursor-ew-resize" />
+        <div data-direction="top"
+            class="resize-border w-full h-1 left-0 top-0 border-t cursor-ns-resize" />
+        <div data-direction="bottom"
+            class="resize-border w-full h-1 left-0 bottom-0 border-b cursor-ns-resize" />
+        <div data-direction="right"
+            class="resize-border h-full w-1 right-0 top-0 border-r cursor-ew-resize" />
+        <div data-direction="left-top"
+            class="resize-corner left-0 top-0 cursor-nwse-resize transform-translate-x-1/2 -translate-y-1/2 md:scale-25" />
+        <div data-direction="right-top"
+            class="resize-corner right-0 top-0 cursor-nesw-resize transform
+                translate-x-1/2 -translate-y-1/2 md:scale-25" />
+        <div data-direction="left-bottom"
+            class="resize-corner left-0 bottom-0 cursor-nesw-resize transform
+                -translate-x-1/2 translate-y-1/2 md:scale-25" />
+        <div data-direction="right-bottom"
+            class="resize-corner right-0 bottom-0 cursor-nwse-resize transform
+            translate-x-1/2 translate-y-1/2 md:scale-25" />
+    </div>
+</template>
 <style scoped>
     .operation {
         background-color: rgba(0, 0, 0, 0.3)

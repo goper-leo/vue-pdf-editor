@@ -1,24 +1,3 @@
-<template>
-    <div
-        class="absolute left-0 top-0 select-none"
-        :style="{width: `${width + dw}px`, 
-            height: `${height + dh}px`, 
-            transform: `translate(${x + dx}px, ${y + dy}px)`,
-            opacity: opacity
-        }">
-        <object-image :operation="operation"
-            @panstart="handlePanStart"
-            @panmove="handlePanMove"
-            @panend="handlePanEnd" />
-        <div
-            @click="$emit('delete')"
-            class="absolute left-0 top-0 right-0 w-6 h-6 m-auto rounded-full bg-red-100
-                cursor-pointer transform -translate-y-1/2 md:scale-25 text-center border border-black">
-            X
-        </div>
-        <canvas class="w-full h-full" ref="canvasImage" />
-    </div>
-</template>
 <script>
 import { reactive, toRefs, ref, computed, onMounted } from "vue"
 import ObjectImage from "./objects/ObjectImage.vue"
@@ -38,7 +17,7 @@ export default {
         opacity: { required: true },
     },
 
-    emits: [ 'update' ],
+    emits: [ 'update', 'delete' ],
 
     setup(props, { emit }) {
         const canvasImage = ref()
@@ -161,3 +140,24 @@ export default {
     }
 }
 </script>
+<template>
+    <div
+        class="absolute left-0 top-0 select-none"
+        :style="{width: `${width + dw}px`, 
+            height: `${height + dh}px`, 
+            transform: `translate(${x + dx}px, ${y + dy}px)`,
+            opacity: opacity
+        }">
+        <object-image :operation="operation"
+            @panstart="handlePanStart"
+            @panmove="handlePanMove"
+            @panend="handlePanEnd" />
+        <div
+            @click="$emit('delete')"
+            class="absolute left-0 top-0 right-0 w-6 h-6 m-auto rounded-full bg-red-100
+                cursor-pointer transform -translate-y-1/2 md:scale-25 text-center border border-black">
+            X
+        </div>
+        <canvas class="w-full h-full" ref="canvasImage" />
+    </div>
+</template>
