@@ -1,13 +1,3 @@
-<template>
-    <div>
-        <canvas
-            ref="pdfCanvas"
-            class="max-w-full"
-            :style="{width: `${width}px`}"
-            :width="width"
-            :height="height"/>
-    </div>
-</template>
 <script>
 import { reactive, toRefs, onBeforeUnmount, ref, onMounted } from "vue"
 
@@ -60,3 +50,13 @@ export default {
     }
 }
 </script>
+<template>
+    <div>
+        <canvas
+            ref="pdfCanvas"
+            class="max-w-full"
+            :style="{width: `${width}px`}"
+            :width="width"
+            :height="height" />
+    </div>
+</template>

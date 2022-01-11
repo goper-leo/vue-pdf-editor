@@ -156,7 +156,7 @@ export default {
             @click="$emit('delete')"
             class="absolute left-0 top-0 right-0 w-6 h-6 m-auto rounded-full bg-red-100
                 cursor-pointer transform -translate-y-1/2 md:scale-25 text-center border border-black">
-            X
+            <img class="w-full h-full" src="./src/assets/delete.svg" alt="delete object" />
         </div>
         <canvas class="w-full h-full" ref="canvasImage" />
     </div>

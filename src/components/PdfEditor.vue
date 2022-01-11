@@ -9,12 +9,13 @@ import {
 import prepareAssets, { fetchFont } from "./utils/prepareAssets"
 import PdfPage from "./PdfPage.vue"
 import ObjectContainer from "./ObjectContainer.vue"
+import SignatureCanvas from "./SignatureCanvas.vue"
 import { save } from "./utils/PDF"
 // import { dataType64toFile } from './utils/image'
 
 export default {
 
-    components: { PdfPage, ObjectContainer },
+    components: { PdfPage, ObjectContainer, SignatureCanvas },
 
     props: {
         pdf: {
@@ -31,7 +32,8 @@ export default {
             pages: [],
             selectedPageIndex: 0,
             pdfFile: null,
-            opacity: 1,
+            opacity: 1, // @TODO update this one!
+            isShowSignatureCanvas: false,
         })
 
         mounted(props)
@@ -139,12 +141,25 @@ export default {
             e.target.value = null
         }
 
-        return { ...toRefs(data), download, onMeasure, selectPage, updateObject, deleteObject, uploadImage, addImage }
+        function addSignature() {
+            // @TODO check selectedPageIndex
+            data.isShowSignatureCanvas = true
+        }
+
+        return { 
+            ...toRefs(data), onMeasure, selectPage, 
+            updateObject, deleteObject, 
+            download, uploadImage, addImage, addSignature,
+        }
     }
 }
 </script>
 <template>
     <div class="mb-4 flex flex-col relative">
+        <!-- Signature Canvas -->
+        <signature-canvas v-if="isShowSignatureCanvas" 
+            @cancel="isShowSignatureCanvas = false" />
+        <!-- END -->
         <div class="absolute right-0 p-4 mb-4 flex flex-col">
             <input type="file"
                 id="image"
@@ -155,6 +170,10 @@ export default {
                 class="text-black border border-black cursor-pointer font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2">
                 Add Image
             </label>
+            <button @click="addSignature" 
+                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                Add Signature
+            </button>
             <button class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                 @click="download">
                 Save
