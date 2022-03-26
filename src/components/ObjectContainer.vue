@@ -1,163 +1,148 @@
-<script>
+<script setup>
 import { reactive, toRefs, ref, computed, onMounted } from 'vue'
 import ObjectImage from './objects/ObjectImage.vue'
 import ObjectSignature from './objects/ObjectSignature.vue'
 
-export default {
-    components: { ObjectImage, ObjectSignature },
+const props = defineProps({
+    payload: { required: true },
+    x: { required: true },
+    y: { required: true },
+    file: { required: true },
+    width: { required: true },
+    height: { required: true },
+    pageScale: { required: true },
+    opacity: { required: true },
+    type: { required: true },
+    path: { required: false, default: null },
 
-    props: {
-        payload: { required: true },
-        x: { required: true },
-        y: { required: true },
-        file: { required: true },
-        width: { required: true },
-        height: { required: true },
-        pageScale: { required: true },
-        opacity: { required: true },
-        type: { required: true },
-        path: { required: false, default: null },
-
-        object: {
-            required: true,
-            type: Object
-        }
+    object: {
+        required: true,
+        type: Object,
     },
+})
 
-    emits: ['update', 'delete'],
+const emit = defineEmits(['update', 'delete'])
 
-    setup(props, { emit }) {
-        const canvasImage = ref()
-        const signature = ref(null)
+const canvasImage = ref()
+const signature = ref(null)
+const operation = ref(null)
 
-        const data = reactive({
-            startX: null,
-            startY: null,
-            operation: '',
-            directions: [],
-            dx: 0,
-            dy: 0,
-            dw: 0,
-            dh: 0,
-            pannableFunction: null,
+const data = reactive({
+    startX: null,
+    startY: null,
+    directions: [],
+    dx: 0,
+    dy: 0,
+    dw: 0,
+    dh: 0,
+    pannableFunction: null,
+})
+// path.value = 'M41,10L41,13L41,16L42,22L46,30L53,39L62,51L73,66L94,80L122,100L148,119L172,134L202,143L236,153L273,156L309,158L350,158L387,154L421,147L451,139L475,130L490,123L501,113L505,106L507,96L507,90L506,85L501,81L492,76L479,70L459,65L435,62L399,62L356,62L307,65L253,75L201,90L154,106L115,131L83,153L57,176L40,198L25,219L14,235L10,250L16,267L21,280L27,286L33,292L42,296L54,296L69,296L90,292L116,288L138,283L159,277L181,272L200,266L219,260L239,255L256,251L277,247L296,244L312,240L326,236L335,234L339,230L341,230L343,230'
+
+const moveOperation = computed(() => {
+    return operation.value === 'move'
+})
+
+onMounted(() => {
+    setCanvas(props)
+})
+
+function setCanvas(props) {
+    let { width, height } = props
+    if (props.type == 'image') {
+        // use canvas to prevent img tag's auto resize
+        canvasImage.value.width = width
+        canvasImage.value.height = height
+        canvasImage.value.getContext('2d').drawImage(props.payload, 0, 0)
+
+        let scale = 1
+        const limit = 500
+        if (width > limit) {
+            scale = limit / width
+        }
+        if (height > limit) {
+            scale = Math.min(scale, limit / height)
+        }
+        emit('update', {
+            width: width * scale,
+            height: height * scale,
         })
-        // path.value = 'M41,10L41,13L41,16L42,22L46,30L53,39L62,51L73,66L94,80L122,100L148,119L172,134L202,143L236,153L273,156L309,158L350,158L387,154L421,147L451,139L475,130L490,123L501,113L505,106L507,96L507,90L506,85L501,81L492,76L479,70L459,65L435,62L399,62L356,62L307,65L253,75L201,90L154,106L115,131L83,153L57,176L40,198L25,219L14,235L10,250L16,267L21,280L27,286L33,292L42,296L54,296L69,296L90,292L116,288L138,283L159,277L181,272L200,266L219,260L239,255L256,251L277,247L296,244L312,240L326,236L335,234L339,230L341,230L343,230'
 
-        const moveOperation = computed(() => {
-            return data.operation === 'move'
+        if (!['image/jpeg', 'image/png'].includes(props.file.type)) {
+            canvasImage.value.toBlob((blob) => {
+                emit('update', {
+                    file: blob,
+                })
+            })
+        }
+    } else if (props.type == 'signature') {
+        // signature.value.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    }
+}
+
+function handlePanMove(event) {
+    const _dx = (event.x - data.startX) / props.pageScale
+    const _dy = (event.y - data.startY) / props.pageScale
+    if (operation.value === 'move') {
+        data.dx = _dx
+        data.dy = _dy
+    } else if (operation.value === 'scale') {
+        if (data.directions.includes('left')) {
+            data.dx = _dx
+            data.dw = -_dx
+        }
+        if (data.directions.includes('top')) {
+            data.dy = _dy
+            data.dh = -_dy
+        }
+        if (data.directions.includes('right')) {
+            data.dw = _dx
+        }
+        if (data.directions.includes('bottom')) {
+            data.dh = _dy
+        }
+    }
+}
+
+function handlePanEnd() {
+    if (operation.value === 'move') {
+        emit('update', {
+            x: props.x + data.dx,
+            y: props.y + data.dy,
+        })
+        data.dx = 0
+        data.dy = 0
+    } else if (operation.value === 'scale') {
+        emit('update', {
+            x: props.x + data.dx,
+            y: props.y + data.dy,
+            width: props.width + data.dw,
+            height: props.height + data.dh,
         })
 
-        onMounted(() => {
-            setCanvas(props)
-        })
+        data.dx = 0
+        data.dy = 0
+        data.dw = 0
+        data.dh = 0
+        data.directions = []
+    }
+    operation.value = ''
+}
 
-        function setCanvas(props) {
-            let { width, height } = props
-            if (props.type == 'image') {
-                // use canvas to prevent img tag's auto resize
-                canvasImage.value.width = width
-                canvasImage.value.height = height
-                canvasImage.value.getContext('2d').drawImage(props.payload, 0, 0)
-
-                let scale = 1
-                const limit = 500
-                if (width > limit) {
-                    scale = limit / width
-                }
-                if (height > limit) {
-                    scale = Math.min(scale, limit / height)
-                }
-                emit('update', {
-                    width: width * scale,
-                    height: height * scale,
-                })
-
-                if (!['image/jpeg', 'image/png'].includes(props.file.type)) {
-                    canvasImage.value.toBlob((blob) => {
-                        emit('update', {
-                            file: blob,
-                        })
-                    })
-                }
-            } else if (props.type == 'signature') {
-                // signature.value.setAttribute("viewBox", `0 0 ${width} ${height}`);
-            }
-        }
-
-        function handlePanMove(event) {
-            const _dx = (event.x - data.startX) / props.pageScale
-            const _dy = (event.y - data.startY) / props.pageScale
-            if (data.operation === 'move') {
-                data.dx = _dx
-                data.dy = _dy
-            } else if (data.operation === 'scale') {
-                if (data.directions.includes('left')) {
-                    data.dx = _dx
-                    data.dw = -_dx
-                }
-                if (data.directions.includes('top')) {
-                    data.dy = _dy
-                    data.dh = -_dy
-                }
-                if (data.directions.includes('right')) {
-                    data.dw = _dx
-                }
-                if (data.directions.includes('bottom')) {
-                    data.dh = _dy
-                }
-            }
-        }
-
-        function handlePanEnd() {
-            if (data.operation === 'move') {
-                emit('update', {
-                    x: props.x + data.dx,
-                    y: props.y + data.dy,
-                })
-                data.dx = 0
-                data.dy = 0
-            } else if (data.operation === 'scale') {
-                emit('update', {
-                    x: props.x + data.dx,
-                    y: props.y + data.dy,
-                    width: props.width + data.dw,
-                    height: props.height + data.dh,
-                })
-
-                data.dx = 0
-                data.dy = 0
-                data.dw = 0
-                data.dh = 0
-                data.directions = []
-            }
-            data.operation = ''
-        }
-
-        function handlePanStart(event) {
-            data.startX = event.x
-            data.startY = event.y
-            if (event.target === event.currentTarget) {
-                return (data.operation = 'move')
-            }
-            data.operation = 'scale'
-            data.directions = event.target.dataset.direction.split('-')
-        }
-
-        return {
-            ...toRefs(data),
-            moveOperation,
-            canvasImage,
-            handlePanMove,
-            handlePanEnd,
-            handlePanStart,
-        }
-    },
+function handlePanStart(event) {
+    data.startX = event.x
+    data.startY = event.y
+    if (event.target === event.currentTarget) {
+        return (operation.value = 'move')
+    }
+    operation.value = 'scale'
+    data.directions = event.target.dataset.direction.split('-')
 }
 </script>
 <template>
     <div
         class="absolute left-0 top-0 select-none"
-        :style="{ width: `${width + dw}px`, height: `${height + dh}px`, transform: `translate(${x + dx}px, ${y + dy}px)`}"
+        :style="{ width: `${width + data.dw}px`, height: `${height + data.dh}px`, transform: `translate(${x + data.dx}px, ${y + data.dy}px)` }"
     >
         <object-image :operation="operation" @panstart="handlePanStart" @panmove="handlePanMove" @panend="handlePanEnd" />
 

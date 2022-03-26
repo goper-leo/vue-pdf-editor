@@ -74,8 +74,12 @@ function selectPage(index) {
 
 function updateObject(objectId, payload) {
     allObjects.value = allObjects.value.map((object) => {
-        if (object.page == selectedPageIndex.value && object.id === objectId) return { ...object, ...payload }
-        else return object
+        if (object.page == selectedPageIndex.value && object.id === objectId) {
+            console.log('found', { ...object, ...payload })
+            return { ...object, ...payload }
+        } else {
+            return object
+        }
     })
 }
 
@@ -131,18 +135,7 @@ function addSignature() {
 }
 
 function pasteSignature({ width, height, path, scale }) {
-    // const id = generateId()
-    const id = 1
-//     file:File
-// height:462.5
-// id:56
-// page:0
-// payload:<img>
-// type:"image"
-// width:500
-// x:0
-// y:0
-
+    const id = generateId()
     const signatureObject = {
         id,
         path,
@@ -152,6 +145,7 @@ function pasteSignature({ width, height, path, scale }) {
         height,
         width: width * scale,
         scale: 500,
+        page: selectedPageIndex.value,
     }
     allObjects.value = [signatureObject]
     signatureCanvas.isShow = false
